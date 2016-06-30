@@ -1,7 +1,14 @@
 function divElementEnostavniTekst(sporocilo) {
   var jeSmesko = sporocilo.indexOf('http://sandbox.lavbic.net/teaching/OIS/gradivo/') > -1;
-  if (jeSmesko) {
-    sporocilo = sporocilo.replace(/\</g, '&lt;').replace(/\>/g, '&gt;').replace('&lt;img', '<img').replace('png\' /&gt;', 'png\' />');
+   var jeSlika = sporocilo.indexOf('img') > -1;
+   console.log(jeSlika); 
+  if ( jeSmesko || jeSlika ) {
+  sporocilo = sporocilo.replace(/\</g, '&lt;')
+  .replace(/\>/g, '&gt;')
+  .replace(/&lt;img/g, '<img')
+  .replace(/png\' \/&gt;/g, 'png\' />')
+  .replace(/jpg\' \/&gt;/g, 'jpg\' />')
+  .replace(/gif\' \/&gt;/g, 'gif\' />');
     return $('<div style="font-weight: bold"></div>').html(sporocilo);
   } else {
     return $('<div style="font-weight: bold;"></div>').text(sporocilo);
@@ -15,7 +22,9 @@ function divElementHtmlTekst(sporocilo) {
 function procesirajVnosUporabnika(klepetApp, socket) {
   var sporocilo = $('#poslji-sporocilo').val();
   sporocilo = dodajSmeske(sporocilo);
+
   var sistemskoSporocilo;
+  
 
   if (sporocilo.charAt(0) == '/') {
     sistemskoSporocilo = klepetApp.procesirajUkaz(sporocilo);
@@ -24,9 +33,15 @@ function procesirajVnosUporabnika(klepetApp, socket) {
     }
   } else {
     sporocilo = filtirirajVulgarneBesede(sporocilo);
+    ugotoviNaslov(sporocilo);
+    for(var i = 0 ; i < potDoSlike.length; i++)
+    {
+      sporocilo += " <img style='width:200px; margin-left: 20px;' src='"+potDoSlike[i]+"' /> ";
+    }
     klepetApp.posljiSporocilo(trenutniKanal, sporocilo);
     $('#sporocila').append(divElementEnostavniTekst(sporocilo));
     $('#sporocila').scrollTop($('#sporocila').prop('scrollHeight'));
+    potDoSlike=[];
   }
 
   $('#poslji-sporocilo').val('');
@@ -115,7 +130,25 @@ $(document).ready(function() {
   
   
 });
-
+var potDoSlike = [];
+function ugotoviNaslov(vhod) {
+  var nizi = [];
+    nizi = vhod.split(' ');
+  var stevec=0;
+  for(var i = 0; i < nizi.length; i++)
+  {
+    if(nizi[i].substr(0,7) == "http://" || nizi[i].substr(0,8) == "https://")
+    {
+      var koncnica = nizi[i].substring(nizi[i].length-4, nizi[i].length);
+      if(koncnica == ".png" || koncnica == ".jpg" || koncnica == ".gif")
+      {
+        potDoSlike[stevec] = nizi[i];
+        stevec++;
+      }
+    }
+  }
+  
+}
 function dodajSmeske(vhodnoBesedilo) {
   var preslikovalnaTabela = {
     ";)": "wink.png",
