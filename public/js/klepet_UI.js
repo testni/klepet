@@ -1,14 +1,19 @@
 function divElementEnostavniTekst(sporocilo) {
   var jeSmesko = sporocilo.indexOf('http://sandbox.lavbic.net/teaching/OIS/gradivo/') > -1;
    var jeSlika = sporocilo.indexOf('img') > -1;
-   console.log(jeSlika); 
-  if ( jeSmesko || jeSlika ) {
-  sporocilo = sporocilo.replace(/\</g, '&lt;')
-  .replace(/\>/g, '&gt;')
-  .replace(/&lt;img/g, '<img')
-  .replace(/png\' \/&gt;/g, 'png\' />')
-  .replace(/jpg\' \/&gt;/g, 'jpg\' />')
-  .replace(/gif\' \/&gt;/g, 'gif\' />');
+  var jeYoutube = sporocilo.indexOf('iframe') > -1;
+  if (jeSmesko || jeYoutube || jeSlika) {
+    sporocilo = sporocilo.replace(/\</g, '&lt;')
+    .replace(/\>/g, '&gt;')
+    .replace('&lt;img', '<img')
+    .replace('png\' /&gt;', 'png\' />')
+    .replace(/&lt;div/gi,'<div')
+    .replace(/&lt;/gi,'<')
+    .replace(/&lt;iframe/gi,'<iframe')
+    .replace(/&lt;\/iframe&gt;/gi,'</iframe>')
+    .replace(/&lt;\/div&gt;/gi,'</div>')
+    .replace(/&gt;/gi,'>');
+
     return $('<div style="font-weight: bold"></div>').html(sporocilo);
   } else {
     return $('<div style="font-weight: bold;"></div>').text(sporocilo);
@@ -38,9 +43,15 @@ function procesirajVnosUporabnika(klepetApp, socket) {
     {
       sporocilo += " <img style='width:200px; margin-left: 20px;' src='"+potDoSlike[i]+"' /> ";
     }
+    ugotoviYoutube(sporocilo);
+    for(var i in YoutubeLinki)
+    {
+      sporocilo+= " <iframe src='https://www.youtube.com/embed/"+YoutubeLinki[i]+"'  style='margin-left: 20px; width: 200px; height: 150px;' allowfullscreen></iframe>"
+    }            
     klepetApp.posljiSporocilo(trenutniKanal, sporocilo);
     $('#sporocila').append(divElementEnostavniTekst(sporocilo));
     $('#sporocila').scrollTop($('#sporocila').prop('scrollHeight'));
+    YoutubeLinki = [];
     potDoSlike=[];
   }
 
@@ -54,7 +65,22 @@ var vulgarneBesede = [];
 $.get('/swearWords.txt', function(podatki) {
   vulgarneBesede = podatki.split('\r\n');
 });
-
+var YoutubeLinki= [];
+function ugotoviYoutube(vhod) {
+  var povezava = "https://www.youtube.com/watch?v=";
+  var nizi= [];
+  var stevec = 0;
+  nizi = vhod.split(" ");
+  for(var i in nizi) {
+    if(nizi[i].substring(0,povezava.length) == povezava)
+    {
+      YoutubeLinki[stevec] = nizi[i].substring(povezava.length, nizi[i].length);
+      stevec++;
+    }
+    
+  }
+  
+}
 function filtirirajVulgarneBesede(vhod) {
   for (var i in vulgarneBesede) {
     vhod = vhod.replace(new RegExp('\\b' + vulgarneBesede[i] + '\\b', 'gi'), function() {
